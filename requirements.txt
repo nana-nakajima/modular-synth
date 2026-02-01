@@ -1,0 +1,12 @@
+# 🎹 Modular Synth - 依赖包
+
+# 核心依赖
+numpy>=1.21.0
+scipy>=1.7.0
+
+# GUI
+pygame>=2.0.0
+
+# 可选依赖（增强功能）
+sounddevice>=0.4.0  # 实时音频播放
+# matplotlib>=3.4.0   # 波形可视化
