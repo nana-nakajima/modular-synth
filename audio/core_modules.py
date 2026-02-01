@@ -336,7 +336,7 @@ class Reverb:
             output[i] = audio_data[i] * 0.5 + delayed * 0.5 * (1 - self.damping)
             
             # 写入延迟线
-            self.delay_buffer[self.write_index] = audio[i] + delayed * self.room_size * 0.5
+            self.delay_buffer[self.write_index] = audio_data[i] + delayed * self.room_size * 0.5
             self.write_index = (self.write_index + 1) % len(self.delay_buffer)
         
         return output
@@ -405,3 +405,249 @@ def normalize(audio_data):
     if max_val > 0:
         return audio_data / max_val
     return audio_data
+
+
+# ============ 失真效果器 ============
+
+class Distortion:
+    """失真效果 - 饱和与过载"""
+    
+    def __init__(self, drive=0.5, tone=0.5, sample_rate=44100):
+        self.drive = drive      # 驱动量 (0-1)
+        self.tone = tone        # 音色控制
+        self.sample_rate = sample_rate
+    
+    def set_drive(self, drive):
+        """设置驱动量"""
+        self.drive = max(0, min(1, drive))
+    
+    def set_tone(self, tone):
+        """设置音色"""
+        self.tone = max(0, min(1, tone))
+    
+    def process(self, audio_data):
+        """处理失真 - 使用软clipping"""
+        # 应用驱动增益
+        gain = 1.0 + self.drive * 10
+        processed = audio_data * gain
+        
+        # 软clipping曲线
+        k = self.drive * 20  # 失真强度
+        processed = np.tanh(processed * k) / np.tanh(k)
+        
+        # 简单的音色滤波
+        if self.tone < 0.5:
+            # 更亮
+            pass  # 不做额外处理
+        else:
+            # 更暗 - 简单的低通
+            alpha = 0.1
+            filtered = np.zeros_like(processed)
+            prev = 0
+            for i in range(len(processed)):
+                filtered[i] = alpha * processed[i] + (1 - alpha) * prev
+                prev = filtered[i]
+            processed = filtered
+        
+        return processed
+
+
+# ============ 效果器链 ============
+
+class EffectChain:
+    """效果器链 - 串联多个效果器"""
+    
+    def __init__(self, sample_rate=44100):
+        self.sample_rate = sample_rate
+        self.effects = []  # [(effect_name, effect_instance), ...]
+    
+    def add_effect(self, effect_name, effect_instance):
+        """添加效果器到链"""
+        self.effects.append((effect_name, effect_instance))
+    
+    def remove_effect(self, effect_name):
+        """从链中移除效果器"""
+        self.effects = [(name, eff) for name, eff in self.effects if name != effect_name]
+    
+    def process(self, audio_data):
+        """依次处理所有效果器"""
+        processed = audio_data
+        for name, effect in self.effects:
+            if hasattr(effect, 'process'):
+                processed = effect.process(processed)
+        return processed
+    
+    def get_params(self):
+        """获取所有效果器参数"""
+        params = {}
+        for name, effect in self.effects:
+            if hasattr(effect, '__dict__'):
+                params[name] = effect.__dict__.copy()
+        return params
+    
+    def set_param(self, effect_name, param_name, value):
+        """设置某个效果器的参数"""
+        for name, effect in self.effects:
+            if name == effect_name and hasattr(effect, param_name):
+                setter = f'set_{param_name}'
+                if hasattr(effect, setter):
+                    getattr(effect, setter)(value)
+                    return True
+                elif hasattr(effect, param_name):
+                    setattr(effect, param_name, value)
+                    return True
+        return False
+
+
+# ============ LFO自动化控制 ============
+
+class LFOModulator:
+    """LFO自动化控制器 - 将LFO连接到参数调制"""
+    
+    def __init__(self, sample_rate=44100):
+        self.sample_rate = sample_rate
+        self.modulations = []  # [(target, lfo, param_name, depth), ...]
+    
+    def add_modulation(self, target_obj, lfo, param_name, depth=0.5):
+        """
+        添加调制连接
+        
+        Args:
+            target_obj: 目标对象 (Oscillator, Filter等)
+            lfo: LFO实例
+            param_name: 要调制的参数名
+            depth: 调制深度 (0-1)
+        """
+        self.modulations.append({
+            'target': target_obj,
+            'lfo': lfo,
+            'param_name': param_name,
+            'depth': depth,
+            'base_value': None
+        })
+    
+    def start(self):
+        """开始调制 - 记录基础值"""
+        for mod in self.modulations:
+            if hasattr(mod['target'], mod['param_name']):
+                mod['base_value'] = getattr(mod['target'], mod['param_name'])
+    
+    def process(self, num_samples):
+        """处理调制"""
+        if not self.modulations:
+            return
+        
+        for mod in self.modulations:
+            target = mod['target']
+            lfo = mod['lfo']
+            param = mod['param_name']
+            depth = mod['depth']
+            base = mod['base_value']
+            
+            if base is None:
+                continue
+            
+            # 获取LFO值
+            lfo_value = lfo.get_value()
+            
+            # 计算调制值
+            if param == 'frequency':
+                # 频率调制 (以base_value为基准)
+                mod_amount = base * depth * 0.5 * lfo_value
+                new_value = base + mod_amount
+                if hasattr(target, 'set_frequency'):
+                    target.set_frequency(max(20, min(20000, new_value)))
+            
+            elif param == 'cutoff':
+                # 滤波器截止频率调制
+                mod_amount = 5000 * depth * lfo_value
+                new_value = base + mod_amount
+                if hasattr(target, 'set_cutoff'):
+                    target.set_cutoff(max(20, min(20000, new_value)))
+            
+            elif param == 'gain':
+                # 增益调制
+                mod_amount = 0.5 * depth * lfo_value
+                new_value = base + mod_amount
+                if hasattr(target, 'gain'):
+                    target.gain = max(0, min(1, new_value))
+    
+    def remove_modulation(self, index):
+        """移除调制连接"""
+        if 0 <= index < len(self.modulations):
+            self.modulations.pop(index)
+
+
+class AutomationManager:
+    """自动化管理器 - 高级自动化控制"""
+    
+    def __init__(self, sample_rate=44100):
+        self.sample_rate = sample_rate
+        self.lfo_modulator = LFOModulator(sample_rate)
+        self.automation_lanes = []  # [(target, param, automation_data, loop), ...]
+        self.recorded_events = []  # 录制的自动化事件
+    
+    def create_lfo_modulation(self, target, lfo, param, depth=0.5):
+        """创建LFO调制"""
+        self.lfo_modulator.add_modulation(target, lfo, param, depth)
+        return len(self.lfo_modulator.modulations) - 1
+    
+    def record_parameter_change(self, target, param_name, time, value):
+        """记录参数变化事件"""
+        self.recorded_events.append({
+            'target': target,
+            'param': param_name,
+            'time': time,
+            'value': value
+        })
+    
+    def create_automation_lane(self, target, param_name, data_points, loop=False):
+        """
+        创建自动化轨道
+        
+        Args:
+            target: 目标对象
+            param_name: 参数名
+            data_points: [(time, value), ...]
+            loop: 是否循环
+        """
+        self.automation_lanes.append({
+            'target': target,
+            'param': param_name,
+            'data': sorted(data_points, key=lambda x: x[0]),
+            'loop': loop,
+            'current_index': 0
+        })
+    
+    def process_automation(self, current_time, num_samples):
+        """处理自动化"""
+        # 处理录制的自动化
+        for event in self.recorded_events:
+            if event['time'] <= current_time:
+                if hasattr(event['target'], event['param']):
+                    setter = f'set_{event["param"]}'
+                    if hasattr(event['target'], setter):
+                        getattr(event['target'], setter)(event['value'])
+                self.recorded_events.remove(event)
+        
+        # 处理自动化轨道
+        for lane in self.automation_lanes:
+            if not lane['data']:
+                continue
+            
+            # 找到当前时间对应的值
+            data = lane['data']
+            target = lane['target']
+            param = lane['param']
+            
+            # 简单插值
+            for i in range(len(data) - 1):
+                if data[i][0] <= current_time < data[i + 1][0]:
+                    t0, v0 = data[i]
+                    t1, v1 = data[i + 1]
+                    progress = (current_time - t0) / (t1 - t0)
+                    value = v0 + (v1 - v0) * progress
+                    
+                    if hasattr(target, f'set_{param}'):
+                        getattr(target, f'set_{param}')(value)
+                    break

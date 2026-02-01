@@ -3,7 +3,8 @@
 # Nana的虚拟模块合成器 - 图形用户界面
 
 import pygame
-import numpy as np
+import json
+import os
 from audio.core_modules import Oscillator, Filter, Envelope, LFO, MultiOscillator
 
 # 尝试导入实时音频模块
@@ -362,6 +363,18 @@ class SynthGUI:
         else:
             self.synth = None
             print("⚠️ 使用模拟音频模式")
+
+        # 预设音色库
+        self.presets_dir = os.path.join(os.path.dirname(__file__), 'presets')
+        os.makedirs(self.presets_dir, exist_ok=True)
+        self.load_presets_list()
+
+        # 当前预设名称
+        self.current_preset = "Default"
+
+        # 保存/加载状态提示
+        self.status_message = ""
+        self.status_timer = 0
     
     def handle_events(self):
         """处理事件"""
@@ -406,6 +419,23 @@ class SynthGUI:
                     self.osc_module.osc.set_wave_type('triangle')
                     if self.synth:
                         self.synth.set_wave_type('triangle')
+
+                # 预设加载 (P + 数字键)
+                elif event.key == pygame.K_p:
+                    # 等待下一次按键选择预设
+                    pass
+
+                # 预设快捷键
+                elif event.key == pygame.K_5:
+                    self.load_preset('Lead')
+                elif event.key == pygame.K_6:
+                    self.load_preset('Bass')
+                elif event.key == pygame.K_7:
+                    self.load_preset('Pad')
+
+                # ESC - 退出
+                elif event.key == pygame.K_ESCAPE:
+                    self.running = False
             
             # 键盘释放
             elif event.type == pygame.KEYUP:
@@ -462,6 +492,17 @@ class SynthGUI:
         status = f"FPS: {self.clock.get_fps():.1f} | Active Keys: {len(self.active_keys)}"
         status_surf = self.small_font.render(status, True, COLOR_TEXT)
         self.screen.blit(status_surf, (10, SCREEN_HEIGHT - 25))
+
+        # 绘制预设名称
+        preset_text = f"Preset: {self.current_preset}"
+        preset_surf = self.small_font.render(preset_text, True, (150, 200, 255))
+        self.screen.blit(preset_surf, (200, SCREEN_HEIGHT - 25))
+
+        # 绘制状态消息
+        if self.status_timer > 0 and self.status_message:
+            msg_surf = self.font.render(self.status_message, True, (100, 255, 100))
+            self.screen.blit(msg_surf, (SCREEN_WIDTH//2 - msg_surf.get_width()//2, SCREEN_HEIGHT - 60))
+            self.status_timer -= 1
         
         pygame.display.flip()
     
@@ -471,11 +512,138 @@ class SynthGUI:
         start = (self.osc_module.rect.right, self.osc_module.rect.centery)
         end = (self.filter_module.rect.left, self.filter_module.rect.centery)
         pygame.draw.line(self.screen, (100, 100, 150), start, end, 3)
-        
+
         # FILTER -> ENV (概念上的)
         start = (self.filter_module.rect.right, self.filter_module.rect.centery + 50)
         end = (self.env_module.rect.left, self.env_module.rect.centery + 50)
         pygame.draw.line(self.screen, (100, 100, 150), start, end, 3)
+
+    # ============ 预设管理 ============
+
+    def load_presets_list(self):
+        """加载预设列表"""
+        self.presets = {}
+        preset_files = [f for f in os.listdir(self.presets_dir) if f.endswith('.json')]
+        for pf in preset_files:
+            preset_name = pf[:-5]  # 移除.json
+            self.presets[preset_name] = os.path.join(self.presets_dir, pf)
+
+        # 默认预设
+        default_presets = {
+            'Lead': self.create_lead_preset(),
+            'Bass': self.create_bass_preset(),
+            'Pad': self.create_pad_preset(),
+        }
+        for name, data in default_presets.items():
+            self.presets[name] = data
+
+    def create_lead_preset(self):
+        """创建Lead音色预设"""
+        return {
+            'osc_frequency': 440.0,
+            'osc_wave_type': 'sawtooth',
+            'filter_cutoff': 3000,
+            'filter_resonance': 5,
+            'env_attack': 0.01,
+            'env_decay': 0.3,
+            'env_sustain': 0.8,
+            'env_release': 0.5,
+            'lfo_frequency': 0,
+            'lfo_wave_type': 'sine',
+        }
+
+    def create_bass_preset(self):
+        """创建Bass音色预设"""
+        return {
+            'osc_frequency': 110.0,
+            'osc_wave_type': 'square',
+            'filter_cutoff': 800,
+            'filter_resonance': 8,
+            'env_attack': 0.005,
+            'env_decay': 0.2,
+            'env_sustain': 0.6,
+            'env_release': 0.3,
+            'lfo_frequency': 0,
+            'lfo_wave_type': 'sine',
+        }
+
+    def create_pad_preset(self):
+        """创建Pad音色预设"""
+        return {
+            'osc_frequency': 220.0,
+            'osc_wave_type': 'sine',
+            'filter_cutoff': 2000,
+            'filter_resonance': 2,
+            'env_attack': 0.5,
+            'env_decay': 0.5,
+            'env_sustain': 0.9,
+            'env_release': 1.5,
+            'lfo_frequency': 0.5,
+            'lfo_wave_type': 'sine',
+        }
+
+    def save_preset(self, preset_name):
+        """保存当前设置到预设"""
+        preset_data = {
+            'osc_frequency': self.osc_module.osc.frequency,
+            'osc_wave_type': self.osc_module.osc.wave_type,
+            'filter_cutoff': self.filter_module.filter.cutoff,
+            'filter_resonance': getattr(self.filter_module.filter, 'resonance', 0),
+            'env_attack': self.env_module.env.attack,
+            'env_decay': self.env_module.env.decay,
+            'env_sustain': self.env_module.env.sustain,
+            'env_release': self.env_module.env.release,
+            'lfo_frequency': self.lfo_module.lfo.frequency,
+            'lfo_wave_type': self.lfo_module.lfo.wave_type,
+        }
+
+        if preset_name in self.presets and isinstance(self.presets[preset_name], dict):
+            # 更新内存中的预设
+            self.presets[preset_name] = preset_data
+        else:
+            # 保存到文件
+            filepath = os.path.join(self.presets_dir, f'{preset_name}.json')
+            with open(filepath, 'w') as f:
+                json.dump(preset_data, f, indent=2)
+            self.presets[preset_name] = filepath
+
+        self.current_preset = preset_name
+        self.show_status(f"💾 已保存预设: {preset_name}")
+
+    def load_preset(self, preset_name):
+        """加载预设"""
+        if preset_name not in self.presets:
+            self.show_status(f"❌ 预设不存在: {preset_name}")
+            return
+
+        preset_data = self.presets[preset_name]
+
+        if isinstance(preset_data, dict):
+            data = preset_data
+        else:
+            with open(preset_data, 'r') as f:
+                data = json.load(f)
+
+        # 应用设置
+        self.osc_module.osc.set_frequency(data.get('osc_frequency', 440.0))
+        self.osc_module.osc.set_wave_type(data.get('osc_wave_type', 'sine'))
+        self.filter_module.filter.set_cutoff(data.get('filter_cutoff', 2000))
+        if 'filter_resonance' in data and hasattr(self.filter_module.filter, 'set_resonance'):
+            self.filter_module.filter.set_resonance(data.get('filter_resonance', 0))
+        self.env_module.env.attack = data.get('env_attack', 0.1)
+        self.env_module.env.decay = data.get('env_decay', 0.2)
+        self.env_module.env.sustain = data.get('env_sustain', 0.7)
+        self.env_module.env.release = data.get('env_release', 0.3)
+        self.lfo_module.lfo.set_frequency(data.get('lfo_frequency', 2.0))
+        self.lfo_module.lfo.set_wave_type(data.get('lfo_wave_type', 'sine'))
+
+        self.current_preset = preset_name
+        self.show_status(f"🎵 已加载预设: {preset_name}")
+
+    def show_status(self, message):
+        """显示状态消息"""
+        self.status_message = message
+        self.status_timer = 120  # 显示2秒 (60fps * 2)
     
     def run(self):
         """主循环"""
@@ -484,7 +652,10 @@ class SynthGUI:
         print("="*60)
         print("按键: A S D F G H J K")
         print("操作: 鼠标拖动旋钮调节参数")
-        print("退出: 按 ESC 或关闭窗口")
+        print("波形: 1-4 (Sine/Saw/Square/Triangle)")
+        print("预设: 5-7 (Lead/Bass/Pad)")
+        print("音量: +/-")
+        print("退出: ESC")
         print("="*60 + "\n")
         
         while self.running:
