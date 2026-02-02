@@ -78,6 +78,21 @@ modular-synth/
 
 ## 📝 更新日志
 
+### v0.6.1 (2026-02-02) 🎵 MIDI导入功能!
+- **MIDI导入/导出**
+  - MIDIImporter类 - 从MIDI文件导入旋律
+  - MIDIExporter类 - 导出旋律为MIDI
+  - MIDIMelodyAdapter - 与旋律生成器无缝集成
+- **支持格式**
+  - 导入: 标准MIDI文件 (.mid)
+  - 导出: 单音轨/多音轨MIDI
+- **使用示例**
+  ```python
+  from audio.midi_importer import MIDIImporter
+  importer = MIDIImporter()
+  result = importer.import_file('song.mid')
+  ```
+
 ### v0.6.0 (2026-02-02) 🎨 GUI大升级!
 - **全新主题系统**
   - 3种主题: DARK (默认), RETRO, CYBER
