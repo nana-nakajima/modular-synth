@@ -78,6 +78,25 @@ modular-synth/
 
 ## 📝 更新日志
 
+### v0.8.0 (2026-02-02) 💾 音频导出功能!
+- **AudioExporter类**
+  - 支持WAV和FLAC格式导出
+  - 可配置采样率 (44.1kHz, 48kHz等)
+  - 可配置位深度 (16-bit, 24-bit, 32-bit)
+  - 自动归一化音量
+  - 淡入淡出效果
+- **SynthAudioExporter类**
+  - 从音符生成音频并导出
+  - 与合成器无缝集成
+  - 演示脚本: demo_v080.py
+- **使用示例**
+  ```python
+  from audio.audio_exporter import SynthAudioExporter, ExportSettings
+  settings = ExportSettings()
+  exporter = SynthAudioExporter(settings)
+  exporter.export_from_notes(notes, "output.wav")
+  ```
+
 ### v0.7.1 (2026-02-02) 🎹 MIDI键盘实时输入!
 - **MIDI键盘实时输入**
   - MIDIInputHandler类 - 实时MIDI设备输入
