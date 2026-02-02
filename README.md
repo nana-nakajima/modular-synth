@@ -37,26 +37,33 @@ python main.py
 
 ```
 modular-synth/
-├── main.py           # 主程序入口
-├── audio/            # 音频处理模块
+├── main.py              # 主程序入口
+├── audio/               # 音频处理模块
 │   ├── oscillators.py
 │   ├── filters.py
 │   ├── envelopes.py
 │   ├── lfo.py
-│   └── effects.py
-├── generators/       # 生成式音乐
+│   ├── effects.py
+│   └── audio_exporter.py
+├── generators/          # 生成式音乐
 │   ├── melody.py
 │   ├── harmony.py
 │   └── rhythm.py
-├── gui/              # 图形界面
+├── gui/                 # 图形界面
 │   ├── main_window.py
 │   ├── modules.py
 │   └── visualizer.py
-├── presets/          # 预设
+├── cloud/               # 云同步 (v0.9.0)
+│   ├── __init__.py
+│   ├── user.py          # 用户账户系统
+│   ├── preset_storage.py # 云端预设存储
+│   └── api.py           # REST API
+├── presets/             # 本地预设
 │   ├── synths/
 │   ├── sfx/
 │   └── patterns/
-├── tests/            # 测试
+├── demo_*.py            # 各版本演示
+├── tests/               # 测试
 ├── README.md
 └── requirements.txt
 ```
@@ -77,6 +84,53 @@ modular-synth/
 - 🔧 ** Built with:** Python, NumPy, Pygame
 
 ## 📝 更新日志
+
+### v0.9.0 (2026-02-02) ☁️ 云同步功能!
+- **用户账户系统**
+  - User类 - 用户数据模型
+  - UserManager - 用户管理服务
+  - 注册/登录/登出
+  - Token认证机制
+  - 用户信息管理
+- **云端预设存储**
+  - CloudPreset类 - 云端预设模型
+  - PresetCloudStorage - 预设存储服务
+  - 预设CRUD操作
+  - 预设搜索和过滤
+  - 点赞/下载统计
+- **预设分享功能**
+  - 分享链接生成
+  - 压缩数据编码
+  - 公开/私有预设
+- **REST API**
+  - Flask API服务器
+  - 完整的REST端点
+  - 认证保护
+  - 健康检查
+- **使用示例**
+  ```python
+  from cloud.user import UserManager
+  from cloud.preset_storage import PresetCloudStorage
+  
+  # 用户管理
+  manager = UserManager()
+  user, token = manager.create_user('username', 'email', 'password')
+  
+  # 预设存储
+  storage = PresetCloudStorage()
+  preset = storage.create_preset(
+      user_id=user.user_id,
+      name='My Preset',
+      category='Lead',
+      preset_data={...}
+  )
+  ```
+- **启动API服务器**
+  ```bash
+  pip install flask
+  python -m cloud.api
+  # 访问 http://localhost:5000/api/v1/health
+  ```
 
 ### v0.8.0 (2026-02-02) 💾 音频导出功能!
 - **AudioExporter类**
