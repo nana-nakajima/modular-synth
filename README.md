@@ -229,4 +229,54 @@ MIT License - 尽情探索和创作！
 
 ---
 
+## 🎮 Steam 版本
+
+**Modular Synth Studio v1.0.0** 现已支持Steam！
+
+### 安装要求
+
+| 平台 | 系统要求 |
+|------|----------|
+| **macOS** | 10.15+, Apple Silicon 或 Intel |
+| **Windows** | 10+, 64位 |
+| **内存** | 4GB+ |
+| **磁盘** | 500MB 可用空间 |
+
+### 功能特性
+
+- ✅ 完整GUI界面 - 旋钮、推子、波形显示
+- ✅ 实时音频 - 低延迟音频引擎
+- ✅ 预设库 - 200+ 专业音色
+- ✅ MIDI支持 - 外接键盘演奏
+- ✅ 音频导出 - WAV/FLAC格式
+- ✅ 云同步 - 跨设备预设分享
+
+### 打包状态
+
+```bash
+# 创建安装包
+cd packaging
+python build_package.py
+
+# 输出:
+# ├── Modular-Synth-Studio-v1.0.0/
+# │   ├── install_mac.sh     # macOS安装脚本
+# │   ├── install_win.bat    # Windows安装脚本
+# │   └── INSTALL.md         # 安装说明
+# └── dist/
+#     └── Modular Synth Studio.app (macOS)
+#     └── ModularSynthStudio.exe (Windows)
+```
+
+### Steam 商店准备
+
+- [ ] 商店截图 (1920x1080)
+- [ ] 宣传视频
+- [ ] 标签分类
+- [ ] 系统要求说明
+- [ ] 更新日志
+
+---
+
 *Made with 💕 by Nana Nakajima*
+*🎮🎸🔧 Always building, always learning*
