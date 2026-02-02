@@ -834,8 +834,189 @@ class PresetLibrary:
         print(f"总计: {total} 个预设\n")
 
 
+# ============ v0.7.0 扩展预设 ============
+
+def create_extended_fx_presets():
+    """创建扩展FX预设 (v0.7.0)"""
+    return [
+        Preset(
+            name="Cyber Sweep",
+            category="FX",
+            oscillator_1={"type": "sawtooth", "detune": 0, "gain": 0.7},
+            oscillator_2={"type": "sawtooth", "detune": 5, "gain": 0.5},
+            filter={"type": "lowpass", "cutoff": 2000, "resonance": 0.3},
+            envelope={"attack": 0.01, "decay": 0.5, "sustain": 0.5, "release": 0.3},
+            lfo={"frequency": 0.2, "type": "sine", "destination": "filter_cutoff"}
+        ),
+        Preset(
+            name="Laser Blast",
+            category="FX",
+            oscillator_1={"type": "square", "detune": 0, "gain": 0.9},
+            oscillator_2={"type": "square", "detune": 10, "gain": 0.5},
+            filter={"type": "bandpass", "cutoff": 3500, "resonance": 0.7},
+            envelope={"attack": 0.001, "decay": 0.1, "sustain": 0, "release": 0.2}
+        ),
+        Preset(
+            name="Warp Drive",
+            category="FX",
+            oscillator_1={"type": "sawtooth", "detune": 0, "gain": 0.6},
+            oscillator_2={"type": "sawtooth", "detune": 15, "gain": 0.4},
+            filter={"type": "lowpass", "cutoff": 1500, "resonance": 0.8},
+            envelope={"attack": 0.05, "decay": 0.8, "sustain": 0.3, "release": 1.0},
+            lfo={"frequency": 0.1, "type": "sine", "destination": "pitch"}
+        ),
+        Preset(
+            name="Phaser Sweep",
+            category="FX",
+            oscillator_1={"type": "triangle", "detune": 0, "gain": 0.8},
+            filter={"type": "lowpass", "cutoff": 2500, "resonance": 0.4},
+            envelope={"attack": 0.02, "decay": 0.3, "sustain": 0.6, "release": 0.4}
+        ),
+        Preset(
+            name="Tremolo Wave",
+            category="FX",
+            oscillator_1={"type": "sine", "detune": 0, "gain": 0.8},
+            filter={"type": "highpass", "cutoff": 500, "resonance": 0.3},
+            envelope={"attack": 0.01, "decay": 0.2, "sustain": 0.8, "release": 0.3},
+            lfo={"frequency": 5, "type": "sine", "destination": "amplitude"}
+        ),
+        Preset(
+            name="Granular Texture",
+            category="FX",
+            oscillator_1={"type": "sawtooth", "detune": 0, "gain": 0.5},
+            oscillator_2={"type": "sawtooth", "detune": 3, "gain": 0.5},
+            oscillator_3={"type": "sawtooth", "detune": -3, "gain": 0.5},
+            filter={"type": "bandpass", "cutoff": 2000, "resonance": 0.6},
+            envelope={"attack": 0.1, "decay": 0.5, "sustain": 0.7, "release": 0.5}
+        ),
+        Preset(
+            name="Glitch Machine",
+            category="FX",
+            oscillator_1={"type": "square", "detune": 0, "gain": 0.9},
+            filter={"type": "highpass", "cutoff": 300, "resonance": 0.2},
+            envelope={"attack": 0.001, "decay": 0.05, "sustain": 0, "release": 0.05}
+        ),
+        Preset(
+            name="Space Drone",
+            category="FX",
+            oscillator_1={"type": "sine", "detune": 0, "gain": 0.4},
+            oscillator_2={"type": "sine", "detune": 2, "gain": 0.4},
+            oscillator_3={"type": "sine", "detune": -2, "gain": 0.4},
+            filter={"type": "lowpass", "cutoff": 800, "resonance": 0.2},
+            envelope={"attack": 1.0, "decay": 1.0, "sustain": 1.0, "release": 2.0}
+        ),
+        Preset(
+            name="Vibrato Lead",
+            category="FX",
+            oscillator_1={"type": "sawtooth", "detune": 0, "gain": 0.8},
+            filter={"type": "lowpass", "cutoff": 3000, "resonance": 0.2},
+            envelope={"attack": 0.01, "decay": 0.1, "sustain": 0.9, "release": 0.2},
+            lfo={"frequency": 5, "type": "sine", "destination": "pitch"}
+        ),
+        Preset(
+            name="Ethereal Pad",
+            category="FX",
+            oscillator_1={"type": "sine", "detune": 0, "gain": 0.5},
+            oscillator_2={"type": "sine", "detune": 3, "gain": 0.5},
+            filter={"type": "lowpass", "cutoff": 1200, "resonance": 0.3},
+            envelope={"attack": 0.5, "decay": 0.5, "sustain": 0.8, "release": 1.5},
+            lfo={"frequency": 0.1, "type": "sine", "destination": "filter_cutoff"}
+        ),
+        Preset(
+            name="Wind Chimes",
+            category="FX",
+            oscillator_1={"type": "sine", "detune": 0, "gain": 0.6},
+            oscillator_2={"type": "sine", "detune": 7, "gain": 0.6},
+            oscillator_3={"type": "sine", "detune": 19, "gain": 0.6},
+            filter={"type": "highpass", "cutoff": 2000, "resonance": 0.2},
+            envelope={"attack": 0.001, "decay": 1.5, "sustain": 0, "release": 2.0}
+        ),
+        Preset(
+            name="Ocean Waves",
+            category="FX",
+            oscillator_1={"type": "sine", "detune": 0, "gain": 0.5},
+            oscillator_2={"type": "sine", "detune": 2, "gain": 0.5},
+            filter={"type": "lowpass", "cutoff": 800, "resonance": 0.4},
+            envelope={"attack": 1.0, "decay": 1.0, "sustain": 0.9, "release": 1.5},
+            lfo={"frequency": 0.05, "type": "sine", "destination": "filter_cutoff"}
+        ),
+        Preset(
+            name="Crystal Clear",
+            category="FX",
+            oscillator_1={"type": "triangle", "detune": 0, "gain": 0.7},
+            oscillator_2={"type": "triangle", "detune": 5, "gain": 0.5},
+            oscillator_3={"type": "triangle", "detune": 10, "gain": 0.3},
+            filter={"type": "highpass", "cutoff": 1000, "resonance": 0.3},
+            envelope={"attack": 0.01, "decay": 0.3, "sustain": 0.9, "release": 0.5}
+        ),
+        Preset(
+            name="Metallic Bells",
+            category="FX",
+            oscillator_1={"type": "square", "detune": 0, "gain": 0.8},
+            oscillator_2={"type": "square", "detune": 9, "gain": 0.5},
+            oscillator_3={"type": "square", "detune": 14, "gain": 0.3},
+            filter={"type": "bandpass", "cutoff": 3000, "resonance": 0.7},
+            envelope={"attack": 0.001, "decay": 0.5, "sustain": 0, "release": 1.0}
+        ),
+        Preset(
+            name="Retro Computer",
+            category="FX",
+            oscillator_1={"type": "square", "detune": 0, "gain": 0.8},
+            filter={"type": "lowpass", "cutoff": 2500, "resonance": 0.2},
+            envelope={"attack": 0.01, "decay": 0.1, "sustain": 0.5, "release": 0.1}
+        ),
+        Preset(
+            name="8-Bit Hero",
+            category="FX",
+            oscillator_1={"type": "square", "detune": 0, "gain": 0.9},
+            filter={"type": "lowpass", "cutoff": 3000, "resonance": 0.1},
+            envelope={"attack": 0.01, "decay": 0.1, "sustain": 0.5, "release": 0.1}
+        ),
+        Preset(
+            name="Dark Matter",
+            category="FX",
+            oscillator_1={"type": "sawtooth", "detune": 0, "gain": 0.5},
+            oscillator_2={"type": "sawtooth", "detune": 3, "gain": 0.5},
+            filter={"type": "lowpass", "cutoff": 600, "resonance": 0.6},
+            envelope={"attack": 0.5, "decay": 0.8, "sustain": 0.9, "release": 1.0},
+            lfo={"frequency": 0.05, "type": "sine", "destination": "filter_cutoff"}
+        ),
+        Preset(
+            name="Shimmering Star",
+            category="FX",
+            oscillator_1={"type": "sine", "detune": 0, "gain": 0.6},
+            oscillator_2={"type": "sine", "detune": 2, "gain": 0.6},
+            filter={"type": "lowpass", "cutoff": 2500, "resonance": 0.4},
+            envelope={"attack": 0.1, "decay": 0.5, "sustain": 0.8, "release": 0.8},
+            lfo={"frequency": 0.15, "type": "sine", "destination": "filter_cutoff"}
+        ),
+        Preset(
+            name="Lo-Fi Texture",
+            category="FX",
+            oscillator_1={"type": "triangle", "detune": 0, "gain": 0.7},
+            oscillator_2={"type": "triangle", "detune": 5, "gain": 0.5},
+            filter={"type": "lowpass", "cutoff": 1500, "resonance": 0.3},
+            envelope={"attack": 0.05, "decay": 0.3, "sustain": 0.7, "release": 0.4}
+        ),
+        Preset(
+            name="Spectral Freeze",
+            category="FX",
+            oscillator_1={"type": "sine", "detune": 0, "gain": 0.5},
+            oscillator_2={"type": "sine", "detune": 7, "gain": 0.5},
+            oscillator_3={"type": "sine", "detune": 14, "gain": 0.5},
+            filter={"type": "highpass", "cutoff": 500, "resonance": 0.4},
+            envelope={"attack": 0.5, "decay": 1.0, "sustain": 1.0, "release": 1.0}
+        ),
+    ]
+
+
 # ============ 主程序入口 ============
 
 if __name__ == "__main__":
     library = PresetLibrary()
+    
+    # v0.7.0: 添加扩展FX预设
+    extended_fx = create_extended_fx_presets()
+    library.presets["FX"].extend(extended_fx)
+    
     library.list_presets()
