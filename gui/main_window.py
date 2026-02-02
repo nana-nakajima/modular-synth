@@ -1,11 +1,19 @@
 #!/usr/bin/env python3
-# 🎹 Modular Synth GUI - 图形界面
-# Nana的虚拟模块合成器 - 图形用户界面
+# 🎹 Modular Synth GUI - 图形界面 v1.0.0
+# Nana的虚拟模块合成器 - 图形用户界面 (最终美化版)
 
 import pygame
 import json
 import os
+import sys
+
+# 添加gui目录到路径
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
 from audio.core_modules import Oscillator, Filter, Envelope, LFO, MultiOscillator
+from theme_system import ThemeManager, LayoutConfig
+from loading_screen import LoadingScreen
+from help_system import HelpSystem, AboutDialog
 
 # 尝试导入实时音频模块
 try:
@@ -15,21 +23,25 @@ except ImportError:
     HAS_REALTIME_AUDIO = False
     print("⚠️ 实时音频模块不可用 (sounddevice未安装)")
 
-# ============ 颜色配置 ============
-COLOR_BG = (30, 30, 40)
-COLOR_PANEL = (50, 50, 70)
-COLOR_MODULE = (80, 80, 110)
-COLOR_MODULE_BORDER = (100, 100, 140)
-COLOR_TEXT = (220, 220, 240)
-COLOR_KNOB = (180, 180, 220)
-COLOR_LED = (100, 255, 100)
-COLOR_WAVEFORM = (100, 200, 255)
+# 使用主题系统
+THEME = ThemeManager('DARK')
+LAYOUT = LayoutConfig()
 
-# ============ 尺寸配置 ============
-SCREEN_WIDTH = 1200
-SCREEN_HEIGHT = 800
-MODULE_WIDTH = 180
-MODULE_HEIGHT = 400
+# 从主题获取颜色
+COLOR_BG = THEME.get_color('bg_primary')
+COLOR_PANEL = THEME.get_color('bg_panel')
+COLOR_MODULE = THEME.get_color('bg_module')
+COLOR_MODULE_BORDER = THEME.get_color('border')
+COLOR_TEXT = THEME.get_color('text_primary')
+COLOR_KNOB = THEME.get_color('knob')
+COLOR_LED = THEME.get_color('led_on')
+COLOR_WAVEFORM = THEME.get_color('waveform')
+
+# 尺寸配置
+SCREEN_WIDTH = LAYOUT.SCREEN_WIDTH
+SCREEN_HEIGHT = LAYOUT.SCREEN_HEIGHT
+MODULE_WIDTH = LAYOUT.MODULE_WIDTH
+MODULE_HEIGHT = LAYOUT.MODULE_HEIGHT
 
 # ============ 旋钮控件 ============
 class Knob:
@@ -317,7 +329,7 @@ class WaveformDisplay:
 
 # ============ 主界面 ============
 class SynthGUI:
-    """合成器主界面"""
+    """合成器主界面 v1.0.0 - 最终美化版"""
     
     def __init__(self):
         pygame.init()
@@ -327,6 +339,25 @@ class SynthGUI:
         self.clock = pygame.time.Clock()
         self.font = pygame.font.Font(None, 24)
         self.small_font = pygame.font.Font(None, 18)
+        
+        # ===== 加载画面 =====
+        self.show_loading = True
+        self.loading_screen = LoadingScreen(SCREEN_WIDTH, SCREEN_HEIGHT)
+        
+        # 设置加载任务
+        self.loading_screen.add_task("加载音频引擎...")
+        self.loading_screen.add_task("初始化振荡器...")
+        self.loading_screen.add_task("创建滤波器...")
+        self.loading_screen.add_task("加载效果器...")
+        self.loading_screen.add_task("构建界面...")
+        self.loading_screen.add_task("加载预设音色...")
+        
+        # ===== 帮助系统 =====
+        self.show_help = False
+        self.help_system = HelpSystem(SCREEN_WIDTH, SCREEN_HEIGHT, THEME.colors)
+        
+        # ===== 关于对话框 =====
+        self.about_dialog = AboutDialog(SCREEN_WIDTH, SCREEN_HEIGHT, THEME.colors)
         
         # 创建模块
         self.osc_module = OscillatorModule(50, 100)
@@ -340,6 +371,7 @@ class SynthGUI:
         # 状态变量
         self.running = True
         self.audio_buffer = None
+        self.loading_complete = False
         
         # 键盘音阶（简单版）
         self.key_notes = {
@@ -359,10 +391,10 @@ class SynthGUI:
         if HAS_REALTIME_AUDIO:
             self.synth = RealTimeSynth(sample_rate=44100, buffer_size=1024)
             self.synth.start()
-            print("✅ 实时音频引擎已启动！")
+            self.loading_screen.next_task("实时音频引擎已启动")
         else:
             self.synth = None
-            print("⚠️ 使用模拟音频模式")
+            self.loading_screen.next_task("使用模拟音频模式")
 
         # 预设音色库
         self.presets_dir = os.path.join(os.path.dirname(__file__), 'presets')
@@ -375,6 +407,13 @@ class SynthGUI:
         # 保存/加载状态提示
         self.status_message = ""
         self.status_timer = 0
+        
+        # 主题系统
+        self.theme = THEME
+        
+        # 完成加载
+        self.loading_screen.complete_all("就绪！")
+        self.loading_complete = True
     
     def handle_events(self):
         """处理事件"""
@@ -382,8 +421,36 @@ class SynthGUI:
             if event.type == pygame.QUIT:
                 self.running = False
             
+            # 帮助系统事件
+            if self.show_help:
+                result = self.help_system.handle_event(event)
+                if result == 'toggle':
+                    self.show_help = False
+                continue
+            
+            # 关于对话框事件
+            if self.about_dialog.visible:
+                if self.about_dialog.handle_event(event):
+                    continue
+            
             # 键盘按下
             if event.type == pygame.KEYDOWN:
+                # 帮助
+                if event.key == pygame.K_h:
+                    self.show_help = not self.show_help
+                    continue
+                
+                # 关于
+                if event.key == pygame.K_F1:
+                    self.about_dialog.toggle()
+                    continue
+                
+                # 主题切换
+                if event.key == pygame.K_t:
+                    new_theme = self.theme.cycle_theme()
+                    self.show_status(f"切换到 {new_theme} 主题")
+                    continue
+                
                 if event.key in self.key_notes:
                     freq = self.key_notes[event.key]
                     self.osc_module.osc.set_frequency(freq)
@@ -420,11 +487,6 @@ class SynthGUI:
                     if self.synth:
                         self.synth.set_wave_type('triangle')
 
-                # 预设加载 (P + 数字键)
-                elif event.key == pygame.K_p:
-                    # 等待下一次按键选择预设
-                    pass
-
                 # 预设快捷键
                 elif event.key == pygame.K_5:
                     self.load_preset('Lead')
@@ -450,6 +512,99 @@ class SynthGUI:
                 for module in [self.osc_module, self.filter_module, self.env_module, self.lfo_module]:
                     if module.handle_event(event):
                         break
+    
+    def update_audio(self):
+        """更新音频"""
+        # 生成一些测试音频
+        osc = self.osc_module.osc
+        audio = osc.generate(duration=0.05)
+        
+        # 应用滤波器
+        filtered = self.filter_module.filter.process(audio)
+        
+        self.audio_buffer = filtered
+        self.waveform.set_audio(filtered)
+    
+    def draw(self):
+        """绘制界面"""
+        # 背景
+        self.screen.fill(COLOR_BG)
+        
+        # 标题栏背景
+        pygame.draw.rect(self.screen, COLOR_PANEL, (0, 0, SCREEN_WIDTH, 50))
+        
+        # 标题
+        title = self.font.render("🎹 Modular Synth Studio", True, COLOR_TEXT)
+        self.screen.blit(title, (20, 15))
+        
+        # 副标题
+        subtitle = self.small_font.render("Nana's Project | 按 H 查看帮助 | T 切换主题", True, (150, 150, 180))
+        self.screen.blit(subtitle, (SCREEN_WIDTH - 350, 18))
+        
+        # 绘制模块
+        self.osc_module.draw(self.screen, self.font)
+        self.filter_module.draw(self.screen, self.font)
+        self.env_module.draw(self.screen, self.font)
+        self.lfo_module.draw(self.screen, self.font)
+        
+        # 绘制波形显示
+        self.waveform.draw(self.screen, self.font)
+        
+        # 绘制连接线（简化版）
+        self.draw_connections()
+        
+        # 绘制状态栏
+        self.draw_status_bar()
+        
+        # 绘制帮助系统
+        if self.show_help:
+            self.help_system.render(self.screen)
+        
+        # 绘制关于对话框
+        if self.about_dialog.visible:
+            self.about_dialog.render(self.screen)
+        
+        pygame.display.flip()
+    
+    def draw_status_bar(self):
+        """绘制状态栏"""
+        # 状态栏背景
+        status_y = SCREEN_HEIGHT - 30
+        pygame.draw.rect(self.screen, COLOR_PANEL, (0, status_y, SCREEN_WIDTH, 30))
+        
+        # FPS
+        fps = self.clock.get_fps()
+        fps_text = f"FPS: {fps:.1f}"
+        fps_surf = self.small_font.render(fps_text, True, COLOR_TEXT)
+        self.screen.blit(fps_surf, (10, status_y + 8))
+        
+        # 活动键
+        keys_text = f"Keys: {','.join(chr(k) if k < 256 else '' for k in self.active_keys)}" if self.active_keys else "Keys: -"
+        keys_surf = self.small_font.render(keys_text, True, COLOR_TEXT)
+        self.screen.blit(keys_surf, (120, status_y + 8))
+        
+        # 主题
+        theme_text = f"Theme: {self.theme.current_theme}"
+        theme_surf = self.small_font.render(theme_text, True, THEME.get_color('text_accent'))
+        self.screen.blit(theme_surf, (280, status_y + 8))
+        
+        # 预设
+        preset_text = f"Preset: {self.current_preset}"
+        preset_surf = self.small_font.render(preset_text, True, (150, 200, 255))
+        self.screen.blit(preset_surf, (420, status_y + 8))
+        
+        # 状态消息
+        if self.status_timer > 0 and self.status_message:
+            msg_surf = self.small_font.render(self.status_message, True, COLOR_LED)
+            self.screen.blit(msg_surf, (SCREEN_WIDTH // 2 - msg_surf.get_width() // 2, status_y + 8))
+            self.status_timer -= 1
+        
+        # 音量指示
+        if self.synth:
+            vol = int(self.synth.volume * 10)
+            vol_text = f"Vol: {'█' * vol}{'░' * (10 - vol)}"
+            vol_surf = self.small_font.render(vol_text, True, (100, 255, 100))
+            self.screen.blit(vol_surf, (SCREEN_WIDTH - 150, status_y + 8))
     
     def update_audio(self):
         """更新音频"""
@@ -648,16 +803,33 @@ class SynthGUI:
     def run(self):
         """主循环"""
         print("\n" + "="*60)
-        print("🎹 Modular Synth GUI 已启动!")
+        print("🎹 Modular Synth Studio v1.0.0 已启动!")
         print("="*60)
-        print("按键: A S D F G H J K")
-        print("操作: 鼠标拖动旋钮调节参数")
-        print("波形: 1-4 (Sine/Saw/Square/Triangle)")
-        print("预设: 5-7 (Lead/Bass/Pad)")
-        print("音量: +/-")
-        print("退出: ESC")
+        print("🎮 操作指南:")
+        print("  按键: A S D F G H J K")
+        print("  操作: 鼠标拖动旋钮调节参数")
+        print("  波形: 1-4 (Sine/Saw/Square/Triangle)")
+        print("  预设: 5-7 (Lead/Bass/Pad)")
+        print("  音量: +/-")
+        print("  帮助: H 键")
+        print("  主题: T 键")
+        print("  退出: ESC")
         print("="*60 + "\n")
         
+        # 显示加载画面
+        print("📦 显示加载画面...")
+        while True:
+            # 处理加载画面事件
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    return
+            
+            # 更新加载画面
+            if not self.loading_screen.render():
+                break
+        
+        # 主循环
         while self.running:
             self.handle_events()
             self.update_audio()
