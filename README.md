@@ -78,6 +78,43 @@ modular-synth/
 
 ## 📝 更新日志
 
+### v0.7.1 (2026-02-02) 🎹 MIDI键盘实时输入!
+- **MIDI键盘实时输入**
+  - MIDIInputHandler类 - 实时MIDI设备输入
+  - MIDISynthBridge - MIDI到合成器的桥接器
+  - 支持音符输入、力度感应
+  - CC控制消息支持
+  - 弯音轮支持
+- **功能特性**
+  - 自动检测可用MIDI设备
+  - 多音符同时输入 (和弦支持)
+  - 实时频率计算
+  - 音符名称转换 (C4, D#4等)
+- **使用示例**
+  ```python
+  from audio.midi_input import MIDISynthBridge, SimpleSynth
+  bridge = MIDISynthBridge(SimpleSynth())
+  bridge.start()  # 自动连接第一个MIDI设备
+  ```
+- **依赖安装**
+  ```bash
+  pip install mido python-rtmidi
+  ```
+
+### v0.7.0 (2026-02-02) 🎙️ 演奏录音 & 音效增强!
+- **演奏录音器**
+  - PerformanceRecorder - 录制和回放MIDI演奏
+  - 录音/回放/暂停状态管理
+  - 导出为MIDI文件
+- **音效增强模块**
+  - Phaser (相位器)
+  - RingModulator (环形调制器)
+  - Bitcrusher (比特粉碎器)
+  - Wavefolder (波形折叠器)
+- **扩展预设库**
+  - 新增20个专业FX预设
+  - 总计121个预设
+
 ### v0.6.1 (2026-02-02) 🎵 MIDI导入功能!
 - **MIDI导入/导出**
   - MIDIImporter类 - 从MIDI文件导入旋律
